@@ -1,0 +1,233 @@
+﻿<Window x:Class="RepoToTxtDesktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RepoToTxtDesktop"
+        mc:Ignorable="d"
+        xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        Title="Repo To Txt GUI" Height="600" Width="1000">
+    <Window.Resources>
+        <!-- Стили -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1C97EA"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#0063B1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="Foreground" Value="#D4D4D4"/>
+            <Setter Property="Padding" Value="2,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Border x:Name="Bd" 
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleButton x:Name="Expander"
+                                                Style="{DynamicResource ExpandCollapseToggleStyle}"
+                                                IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                ClickMode="Press"/>
+                                    <ContentPresenter x:Name="PART_Header" 
+                                                    Grid.Column="1"
+                                                    ContentSource="Header"/>
+                                </Grid>
+                            </Border>
+                            <ItemsPresenter x:Name="ItemsHost" 
+                                          Grid.Row="1" 
+                                          Margin="12,0,0,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="False">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2D2D2D"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#37373D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ExpandCollapseToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Width="16" 
+                                Height="16" 
+                                Background="Transparent">
+                            <Path x:Name="ExpandPath"
+                                  Fill="#D4D4D4"
+                                  Data="M 4 8 L 12 8 M 8 4 L 8 12"
+                                  Stroke="#D4D4D4"
+                                  StrokeThickness="1.5"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ExpandPath" 
+                                        Property="Data" 
+                                        Value="M 4 8 L 12 8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Верхняя панель -->
+        <Border Background="#2D2D2D" 
+                Padding="10">
+            <DockPanel>
+                <Button Content="Select Folder" 
+                        Style="{StaticResource ModernButton}"
+                        Command="{Binding SelectFolderCommand}"
+                        DockPanel.Dock="Left"
+                        Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding CurrentFolderPath}"
+                         Foreground="#D4D4D4"
+                         VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Основная область -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Дерево файлов -->
+            <Border Background="#252526" 
+                    BorderBrush="#3F3F46" 
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock Text="EXPLORER" 
+                             DockPanel.Dock="Top"
+                             Foreground="#969696"
+                             FontSize="11"
+                             Padding="10,5"
+                             Background="#2D2D2D"/>
+                    <TreeView Background="Transparent"
+                             BorderThickness="0"
+                             ItemContainerStyle="{StaticResource TreeViewItemStyle}"
+                             ItemsSource="{Binding FileTree}">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <DockPanel>
+                                    <CheckBox IsChecked="{Binding IsSelected}" 
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,5,0"/>
+                                    <Image Width="16" 
+                                           Height="16" 
+                                           Margin="0,0,5,0">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                                        <Setter Property="Source" Value="./Images/folder.png"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsDirectory}" Value="False">
+                                                        <Setter Property="Source" Value="./Images/file.png"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="{Binding Name}" 
+                                             Foreground="#D4D4D4"
+                                             VerticalAlignment="Center"
+                                             MouseDown="TreeItem_MouseDown"/>
+                                </DockPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Разделитель -->
+            <GridSplitter Grid.Column="1" 
+                         Width="4"
+                         Background="Transparent"
+                         HorizontalAlignment="Center"/>
+
+            <!-- Область просмотра файла -->
+            <Border Grid.Column="2" 
+                    Background="#1E1E1E">
+                <avalonedit:TextEditor Grid.Column="1" 
+                              Name="TextEditor"
+                              Background="#232323"
+                              Foreground="#fff"
+                              SyntaxHighlighting="C#"
+                              FontFamily="Consolas"
+                              IsReadOnly="True"
+                              ShowLineNumbers="True"
+                              Margin="5"/>
+            </Border>
+    </Grid>
+
+    <!-- Нижняя панель -->
+        <Border Grid.Row="2" 
+                    Background="#007ACC" 
+                    Height="22">
+            <DockPanel LastChildFill="False">
+                <Button Content="Generate Report" 
+                            Style="{StaticResource ModernButton}"
+                            Command="{Binding GenerateTxtCommand}"
+                            DockPanel.Dock="Right"
+                            Margin="5,2"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                             Foreground="White"
+                             VerticalAlignment="Center"
+                             Margin="10,0"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
