@@ -188,7 +188,7 @@ Use the files and contents provided below to complete this analysis:
 
                         if (ShouldIgnore(entryRelativePath, ignorePatterns))
                         {
-                            contents.AppendLine($"{entryRelativePath} [Ignored]\n");
+                            //contents.AppendLine($"{entryRelativePath} [Ignored]\n");
                             continue;
                         }
 
